@@ -6,4 +6,6 @@ export default {
   MODAL_BG: "rgba(0, 0, 0, 0.2)",
   ACTIVE_BG: "#5252ad",
   ACTIVE_FONT: "#fff",
+  black: "#000000",
+  lightblack: "#1F1B22",
 };

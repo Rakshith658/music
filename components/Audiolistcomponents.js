@@ -46,11 +46,12 @@ export default Audiolistcomponents = ({
   isPlaying,
   activeListItem,
   onOptionpress,
+  AudioPlay,
 }) => {
   return (
     <>
       <View style={styles.audiolistcomponents}>
-        <TouchableWithoutFeedback onPress={() => {}}>
+        <TouchableWithoutFeedback onPress={AudioPlay}>
           <View style={styles.audiolistcomponentsIcon}>
             <View
               style={[
@@ -82,6 +83,7 @@ export default Audiolistcomponents = ({
             name="dots-three-vertical"
             size={24}
             color={Colors.ACTIVE_FONT}
+            style={{ padding: 10 }}
           />
         </View>
       </View>

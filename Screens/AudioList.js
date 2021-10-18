@@ -12,9 +12,18 @@ import {
 import { LayoutProvider, RecyclerListView } from "recyclerlistview";
 import { Audiocontext } from "../context/AudiosProvider";
 import Audiolistcomponents from "../components/Audiolistcomponents";
+import Optionmodel from "../components/Optionmodel";
 
 export default class AudioList extends Component {
   static contextType = Audiocontext;
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      optionModalvisible: false,
+    };
+    this.currentItem = {};
+  }
 
   layoutProvider = new LayoutProvider(
     (index) => {
@@ -41,7 +50,11 @@ export default class AudioList extends Component {
         activeListItem={false}
         isPlaying={false}
         onOptionpress={() => {
-          console.log("Rakshith");
+          this.currentItem = item;
+          this.setState({ ...this.state, optionModalvisible: true });
+        }}
+        AudioPlay={() => {
+          console.log(item);
         }}
       />
     );
@@ -71,6 +84,15 @@ export default class AudioList extends Component {
                 dataProvider={dataProvider}
                 layoutProvider={this.layoutProvider}
                 rowRenderer={this.rowRenderer}
+              />
+              <Optionmodel
+                visible={this.state.optionModalvisible}
+                closeVisibility={() => {
+                  this.setState({ ...this.state, optionModalvisible: false });
+                }}
+                currentItem={this.currentItem}
+                onAddtoPlaylistPress={() => console.log("onAddtoPlaylistPress")}
+                onPlayPress={() => console.log("onPlayPress")}
               />
             </SafeAreaView>
           );
