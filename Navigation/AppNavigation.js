@@ -4,6 +4,7 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import MusicScreen from "../Screens/AudioList";
 import PlayScreen from "../Screens/PlayScreen";
 import FavListScreen from "../Screens/FavList";
+import { Audiocontext } from "../context/AudiosProvider";
 
 const Tab = createBottomTabNavigator();
 

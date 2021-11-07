@@ -2,6 +2,8 @@ import React, { Component, createContext } from "react";
 import { StyleSheet, Alert, View, Text } from "react-native";
 import * as Medialibrary from "expo-media-library";
 import { DataProvider } from "recyclerlistview";
+import { Audio } from "expo-av";
+import { Play, PlayAnother, Puse, Resume } from "../misc/AudioController";
 
 export const Audiocontext = createContext();
 
@@ -14,10 +16,107 @@ export default class AudiosProvider extends Component {
       dataProvider: new DataProvider((r1, r2) => r1 !== r2),
       playbackObj: null,
       soundObj: null,
-      currentAudio: {},
+      currentAudio: null,
       isPlaying: false,
+      currentAudioIndex: null,
+      playbackposition: null,
+      playbackduration: null,
     };
   }
+
+  onPlaybackStatusupdate = (playbackstatus) => {
+    if (playbackstatus.isLoaded && playbackstatus.isPlaying) {
+      this.setState({
+        ...this.state,
+        playbackposition: playbackstatus.positionMillis,
+        playbackduration: playbackstatus.durationMillis,
+      });
+    }
+    if (playbackstatus.didJustFinish) {
+      if (this.state.currentAudioIndex + 1 === this.state.audiofiles.length) {
+        this.handleAudioPress(this.state.audiofiles[0]);
+        return;
+      }
+      this.handleAudioPress(
+        this.state.audiofiles[this.state.currentAudioIndex + 1]
+      );
+    }
+  };
+  handleAudioPress = async (audio) => {
+    if (this.state.soundObj === null) {
+      const playbackObj = new Audio.Sound();
+      // const status = await Play(playbackObj, audio.uri);
+      const status = await playbackObj.loadAsync(
+        { uri: audio.uri },
+        { shouldPlay: true }
+      );
+
+      const index = this.state.audiofiles.indexOf(audio);
+      this.setState({
+        ...this.state,
+        currentAudio: audio,
+        playbackObj: playbackObj,
+        soundObj: status,
+        isPlaying: true,
+        currentAudioIndex: index,
+      });
+      return playbackObj.setOnPlaybackStatusUpdate(this.onPlaybackStatusupdate);
+    }
+
+    //puse Audio
+    if (
+      this.state.soundObj.isLoaded &&
+      this.state.soundObj.isPlaying &&
+      this.state.currentAudio.id === audio.id
+    ) {
+      const status = await Puse(this.state.playbackObj);
+      this.setState({
+        ...this.state,
+        soundObj: status,
+        isPlaying: false,
+      });
+      return this.state.playbackObj.setOnPlaybackStatusUpdate(
+        this.onPlaybackStatusupdate
+      );
+    }
+
+    //resume Audio
+    if (
+      this.state.soundObj.isLoaded &&
+      !this.state.soundObj.isPlaying &&
+      this.state.currentAudio.id === audio.id
+    ) {
+      const status = await Resume(this.state.playbackObj);
+      this.setState({
+        ...this.state,
+        soundObj: status,
+        isPlaying: true,
+      });
+      return this.state.playbackObj.setOnPlaybackStatusUpdate(
+        this.onPlaybackStatusupdate
+      );
+    }
+
+    // Select another audio player
+
+    if (
+      this.state.soundObj.isLoaded &&
+      this.state.currentAudio.id !== audio.id
+    ) {
+      const status = await PlayAnother(this.state.playbackObj, audio.uri);
+      const index = this.state.audiofiles.indexOf(audio);
+      this.setState({
+        ...this.state,
+        soundObj: status,
+        currentAudio: audio,
+        isPlaying: true,
+        currentAudioIndex: index,
+      });
+      return this.state.playbackObj.setOnPlaybackStatusUpdate(
+        this.onPlaybackStatusupdate
+      );
+    }
+  };
 
   PermissionAlert = () => {
     Alert.alert("Permissions required", "this app need to read audio files", [
@@ -90,6 +189,7 @@ export default class AudiosProvider extends Component {
     //     </View>
     //   );
     // }
+
     const {
       audiofiles,
       dataProvider,
@@ -98,6 +198,9 @@ export default class AudiosProvider extends Component {
       currentAudio,
       playbackObj,
       isPlaying,
+      currentAudioIndex,
+      playbackduration,
+      playbackposition,
     } = this.state;
     return (
       <Audiocontext.Provider
@@ -109,6 +212,10 @@ export default class AudiosProvider extends Component {
           playbackObj,
           updateState: this.updateState,
           isPlaying,
+          currentAudioIndex,
+          playbackduration,
+          playbackposition,
+          handleAudioPress: this.handleAudioPress,
         }}
       >
         {this.props.children}
