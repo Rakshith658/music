@@ -13,8 +13,8 @@ import { LayoutProvider, RecyclerListView } from "recyclerlistview";
 import { Audiocontext } from "../context/AudiosProvider";
 import Audiolistcomponents from "../components/Audiolistcomponents";
 import Optionmodel from "../components/Optionmodel";
-import { Audio } from "expo-av";
-import { Play, PlayAnother, Puse, Resume } from "../misc/AudioController";
+// import { Audio } from "expo-av";
+// import { Play, PlayAnother, Puse, Resume } from "../misc/AudioController";
 
 export default class AudioList extends Component {
   static contextType = Audiocontext;
@@ -61,6 +61,10 @@ export default class AudioList extends Component {
       />
     );
   };
+
+  componentDidMount() {
+    this.context.loadpreviousaudio();
+  }
   render() {
     if (!this.context.audiofiles)
       return (
@@ -73,7 +77,8 @@ export default class AudioList extends Component {
 
     return (
       <Audiocontext.Consumer>
-        {({ dataProvider, isPlaying, handleAudioPress }) => {
+        {({ dataProvider, isPlaying, handleAudioPress, updateState }) => {
+          if (!dataProvider._data.length) return null;
           return (
             <SafeAreaView
               style={{
@@ -94,7 +99,12 @@ export default class AudioList extends Component {
                   this.setState({ ...this.state, optionModalvisible: false });
                 }}
                 currentItem={this.currentItem}
-                onAddtoPlaylistPress={() => console.log("onAddtoPlaylistPress")}
+                onAddtoPlaylistPress={() => {
+                  updateState(this.context, {
+                    AddToPlaylist: this.currentItem,
+                  });
+                  this.props.navigation.navigate("Playlist");
+                }}
                 onPlayPress={() => handleAudioPress(this.currentItem)}
               />
             </SafeAreaView>

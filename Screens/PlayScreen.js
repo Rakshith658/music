@@ -24,6 +24,7 @@ const PlayScreen = () => {
     handleAudioPress,
     playbackduration,
     playbackposition,
+    loadpreviousaudio,
   } = useContext(Audiocontext);
 
   const calculateSeebBar = () => {
@@ -39,6 +40,7 @@ const PlayScreen = () => {
     }
     handleAudioPress(audiofiles[currentAudioIndex - 1]);
   };
+
   const Next = () => {
     if (currentAudioIndex + 1 === audiofiles.length) {
       handleAudioPress(audiofiles[0]);
