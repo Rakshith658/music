@@ -22,6 +22,7 @@ const Optionmodel = ({
         transparent
         visible={visible}
         style={{ backgroundColor: "green" }}
+        onRequestClose={closeVisibility}
       >
         <View style={styles.modal}>
           <Text style={styles.title} numberOfLines={1}>
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     fontSize: 18,
     fontWeight: "bold",
-    color: Colors.APP_BG,
+    color: Colors.ACTIVE_BG,
   },
   option: {
     color: Colors.APP_BG,

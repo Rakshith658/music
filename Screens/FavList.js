@@ -10,13 +10,18 @@ import {
   View,
   SafeAreaView,
   FlatList,
+  Alert,
 } from "react-native";
 import PlaylistInputmodel from "../components/PlaylistInputmodel";
+import PlayListSongs from "../components/PlayListSongs";
 import { Audiocontext } from "../context/AudiosProvider";
 import Colors from "../misc/Colors";
+import { EvilIcons } from "@expo/vector-icons";
 
-const FavList = () => {
+const FavList = ({ navigation }) => {
   const [inputModel, setinputModel] = useState(false);
+  const [isVisible, setisVisible] = useState(false);
+  const [Modalplaylist, setModalplaylist] = useState({});
   const context = useContext(Audiocontext);
   const { playlist, AddToPlaylist, updateState } = context;
 
@@ -58,6 +63,57 @@ const FavList = () => {
     updateState(context, { playlist: JSON.parse(result) });
   };
 
+  const handlBannerpress = async (playlistitem) => {
+    if (AddToPlaylist) {
+      const result = await AsyncStorage.getItem("playlist");
+      let updatedlist = [];
+      let sameAudio = false;
+      let old = [];
+      if (result !== null) {
+        old = JSON.parse(result);
+        updatedlist = old.filter((list) => {
+          if (list.id === playlistitem.id) {
+            for (let audio of list.audios) {
+              if (audio.id === AddToPlaylist.id) {
+                sameAudio = true;
+                return;
+              }
+            }
+            list.audios = [...list.audios, AddToPlaylist];
+          }
+          return list;
+        });
+      }
+      if (sameAudio) {
+        Alert.alert(
+          " Same audio Found !",
+          `${AddToPlaylist.filename} is already in playlist`
+        );
+        sameAudio = false;
+        updateState(context, { AddToPlaylist: null });
+        return navigation.goBack();
+      }
+      updateState(context, { AddToPlaylist: null, playlist: [...updatedlist] });
+      await AsyncStorage.setItem("playlist", JSON.stringify([...updatedlist]));
+      return navigation.goBack();
+    }
+    updateState(context, {
+      whereplaying: "playlist",
+      currentAudioplaylist: playlistitem.audios,
+    });
+    setModalplaylist(playlistitem);
+    setisVisible(!isVisible);
+  };
+
+  const deletePlaylist = async (item) => {
+    let result = await AsyncStorage.getItem("playlist");
+    let updatedlist = [];
+    result = JSON.parse(result);
+    updatedlist = result.filter((list) => list.id !== item.id);
+    updateState(context, { playlist: [...updatedlist] });
+    await AsyncStorage.setItem("playlist", JSON.stringify([...updatedlist]));
+  };
+
   useEffect(() => {
     if (!playlist.length) {
       renderPlaylist();
@@ -68,17 +124,29 @@ const FavList = () => {
       <ScrollView contentContainerStyle={styles.Container}>
         {playlist.length
           ? playlist.map((item) => (
-              <TouchableOpacity
-                key={item.id.toString()}
-                style={styles.playlistbanner}
-              >
-                <Text style={styles.favListname}>{item.title}</Text>
-                <Text style={styles.numsongs}>
-                  {item.audios.length > 1
-                    ? `${item.audios.length} Songs`
-                    : `${item.audios.length} Song`}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.playlistbanner} key={item.id.toString()}>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  onPress={() => handlBannerpress(item)}
+                >
+                  <View>
+                    <Text style={styles.favListname}>{item.title}</Text>
+                    <Text style={styles.numsongs}>
+                      {item.audios.length > 1
+                        ? `${item.audios.length} Songs`
+                        : `${item.audios.length} Song`}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => deletePlaylist(item)}
+                  style={{ alignSelf: "center" }}
+                >
+                  <View>
+                    <EvilIcons name="trash" size={24} color="#FF6666" />
+                  </View>
+                </TouchableOpacity>
+              </View>
             ))
           : null}
         <TouchableOpacity onPress={() => setinputModel(!inputModel)}>
@@ -90,6 +158,14 @@ const FavList = () => {
           onSubmit={createPlaylist}
         />
       </ScrollView>
+      <PlayListSongs
+        isVisible={isVisible}
+        playlist={Modalplaylist}
+        closeVisibility={() => {
+          setisVisible(!isVisible);
+          setModalplaylist({});
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -109,6 +185,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   favListname: {
     color: Colors.ACTIVE_FONT,

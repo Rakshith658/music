@@ -46,7 +46,7 @@ export default class AudioList extends Component {
   );
 
   rowRenderer = (type, item, index, extendedState) => {
-    const { currentAudio, handleAudioPress } = this.context;
+    const { currentAudio, handleAudioPress, updateState } = this.context;
     return (
       <Audiolistcomponents
         title={item.filename}
@@ -57,14 +57,17 @@ export default class AudioList extends Component {
           this.currentItem = item;
           this.setState({ ...this.state, optionModalvisible: true });
         }}
-        AudioPlay={() => handleAudioPress(item)}
+        AudioPlay={() => {
+          updateState(this.context, { whereplaying: "songList" });
+          handleAudioPress(item);
+        }}
       />
     );
   };
 
-  componentDidMount() {
-    this.context.loadpreviousaudio();
-  }
+  // componentDidMount() {
+  //   this.context.loadpreviousaudio();
+  // }
   render() {
     if (!this.context.audiofiles)
       return (

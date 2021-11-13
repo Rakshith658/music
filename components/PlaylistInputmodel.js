@@ -24,7 +24,12 @@ const PlaylistInputmodel = ({ modalVisible, CloseVisibility, onSubmit }) => {
     }
   };
   return (
-    <Modal visible={modalVisible} animationType="slide" transparent>
+    <Modal
+      visible={modalVisible}
+      animationType="slide"
+      transparent
+      onRequestClose={CloseVisibility}
+    >
       <View style={styles.Modalcontainer}>
         <View style={styles.inputContainer}>
           <Text style={styles.title}>Create a new Playlist</Text>
@@ -33,6 +38,7 @@ const PlaylistInputmodel = ({ modalVisible, CloseVisibility, onSubmit }) => {
             placeholder="Enter playlist Name"
             value={playListName}
             onChangeText={(e) => setplayListName(e)}
+            placeholderTextColor="gray"
           />
           <AntDesign
             name="check"
@@ -62,7 +68,7 @@ const styles = StyleSheet.create({
     width: width - 20,
     height: 200,
     borderRadius: 10,
-    backgroundColor: Colors.APP_BG,
+    backgroundColor: Colors.lightblack,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -70,12 +76,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginBottom: 10,
+    color: Colors.ACTIVE_FONT,
   },
   TextInput: {
     width: width - 40,
     paddingVertical: 15,
     fontSize: 17,
     borderBottomWidth: 1,
+    borderBottomColor: Colors.ACTIVE_FONT,
+    color: Colors.ACTIVE_FONT,
   },
   submitIcon: {
     padding: 10,

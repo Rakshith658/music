@@ -15,6 +15,8 @@ export default class AudiosProvider extends Component {
     this.state = {
       audiofiles: [],
       playlist: [],
+      whereplaying: "songList",
+      currentAudioplaylist: [],
       AddToPlaylist: null,
       permissionerrors: false,
       dataProvider: new DataProvider((r1, r2) => r1 !== r2),
@@ -36,18 +38,38 @@ export default class AudiosProvider extends Component {
         playbackduration: playbackstatus.durationMillis,
       });
     }
+
     if (playbackstatus.didJustFinish) {
-      if (this.state.currentAudioIndex + 1 === this.state.audiofiles.length) {
-        this.handleAudioPress(this.state.audiofiles[0]);
-        return storeAudioForNextOpeing(this.state.audiofiles[0], 0);
+      if (this.state.whereplaying == "songList") {
+        if (this.state.currentAudioIndex + 1 === this.state.audiofiles.length) {
+          this.handleAudioPress(this.state.audiofiles[0]);
+          return storeAudioForNextOpeing(this.state.audiofiles[0], 0);
+        }
+        this.handleAudioPress(
+          this.state.audiofiles[this.state.currentAudioIndex + 1]
+        );
+        storeAudioForNextOpeing(
+          this.state.audiofiles[this.state.currentAudioIndex + 1],
+          this.state.currentAudioIndex + 1
+        );
+      } else {
+        if (
+          this.state.currentAudioIndex + 1 ===
+          this.state.currentAudioplaylist.length
+        ) {
+          this.setState({ whereplaying: "songList" });
+          let a = this.state.audiofiles[0];
+          if (this.state.currentAudio.id === a.id) {
+            this.handleAudioPress(this.state.audiofiles[1]);
+          } else {
+            this.handleAudioPress(this.state.audiofiles[0]);
+          }
+          // return storeAudioForNextOpeing(this.state.currentAudioplaylist[0], 0);
+        }
+        this.handleAudioPress(
+          this.state.currentAudioplaylist[this.state.currentAudioIndex + 1]
+        );
       }
-      this.handleAudioPress(
-        this.state.audiofiles[this.state.currentAudioIndex + 1]
-      );
-      storeAudioForNextOpeing(
-        this.state.audiofiles[this.state.currentAudioIndex + 1],
-        this.state.currentAudioIndex + 1
-      );
     }
   };
 
@@ -66,9 +88,21 @@ export default class AudiosProvider extends Component {
     } else {
       previousaudio = JSON.parse(previousaudio);
       currentAudio = previousaudio.currentAudio;
-      currentAudioIndex = previousaudio.index;
+
+      currentAudioIndex = this.state.audiofiles.indexOf(currentAudio);
+      if (currentAudioIndex == -1) {
+        currentAudio = this.state.audiofiles[0];
+        currentAudioIndex = 0;
+        return this.setState({
+          ...this.state,
+          currentAudio: currentAudio,
+          currentAudioIndex: currentAudioIndex,
+        });
+      }
+
       this.setState({
         ...this.state,
+        whereplaying: "songList",
         currentAudio: currentAudio,
         currentAudioIndex: currentAudioIndex,
       });
@@ -79,11 +113,12 @@ export default class AudiosProvider extends Component {
     if (this.state.soundObj === null) {
       const playbackObj = new Audio.Sound();
       const status = await Play(playbackObj, audio.uri);
-      // const status = await playbackObj.loadAsync(
-      //   { uri: audio.uri },
-      //   { shouldPlay: true }
-      // );
-      const index = this.state.audiofiles.indexOf(audio);
+      let index;
+      if (this.state.whereplaying == "songList") {
+        index = await this.state.audiofiles.indexOf(audio);
+      } else {
+        index = await this.state.currentAudioplaylist.indexOf(audio);
+      }
       this.setState({
         ...this.state,
         currentAudio: audio,
@@ -97,6 +132,7 @@ export default class AudiosProvider extends Component {
     }
 
     //puse Audio
+
     if (
       this.state.soundObj.isLoaded &&
       this.state.soundObj.isPlaying &&
@@ -114,6 +150,7 @@ export default class AudiosProvider extends Component {
     }
 
     //resume Audio
+
     if (
       this.state.soundObj.isLoaded &&
       !this.state.soundObj.isPlaying &&
@@ -131,13 +168,17 @@ export default class AudiosProvider extends Component {
     }
 
     // Select another audio player
-
     if (
       this.state.soundObj.isLoaded &&
       this.state.currentAudio.id !== audio.id
     ) {
       const status = await PlayAnother(this.state.playbackObj, audio.uri);
-      const index = this.state.audiofiles.indexOf(audio);
+      let index;
+      if (this.state.whereplaying == "songList") {
+        index = await this.state.audiofiles.indexOf(audio);
+      } else {
+        index = await this.state.currentAudioplaylist.indexOf(audio);
+      }
       this.setState({
         ...this.state,
         soundObj: status,
@@ -174,11 +215,6 @@ export default class AudiosProvider extends Component {
       ]),
       audiofiles: [...audiofiles, ...media.assets],
     });
-    // this.setState({
-    //   ...this.state,
-    //   currentAudio: this.state.audiofiles[0],
-    //   currentAudioIndex: 0,
-    // });
   };
 
   getPermission = async () => {
@@ -186,7 +222,7 @@ export default class AudiosProvider extends Component {
 
     if (permission.granted) {
       //get all audio files
-      this.getAudioFiles();
+      await this.getAudioFiles();
     }
 
     if (!permission.canAskAgain && !permission.granted) {
@@ -204,7 +240,7 @@ export default class AudiosProvider extends Component {
 
       if (status === "granted") {
         // get all audio files...
-        this.getAudioFiles();
+        await this.getAudioFiles();
       }
       if (status === "denied" && !canAskAgain) {
         // we went through some error message to the user...
@@ -213,8 +249,13 @@ export default class AudiosProvider extends Component {
     }
   };
 
+  callfunction = async () => {
+    await this.getPermission();
+    this.loadpreviousaudio();
+  };
+
   componentDidMount() {
-    this.getPermission();
+    this.callfunction();
   }
 
   updateState = (prestate, newstate = {}) => {
@@ -242,6 +283,8 @@ export default class AudiosProvider extends Component {
       playbackposition,
       playlist,
       AddToPlaylist,
+      whereplaying,
+      currentAudioplaylist,
     } = this.state;
     return (
       <Audiocontext.Provider
@@ -260,6 +303,8 @@ export default class AudiosProvider extends Component {
           AddToPlaylist,
           handleAudioPress: this.handleAudioPress,
           loadpreviousaudio: this.loadpreviousaudio,
+          whereplaying,
+          currentAudioplaylist,
         }}
       >
         {this.props.children}
